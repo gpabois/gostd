@@ -2,6 +2,7 @@ package json
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -21,7 +22,7 @@ type Parser struct {
 var UnexpectedEof error = errors.New("unexpected eof")
 
 func UnexpectedToken(token Token) error {
-	return errors.New("unexpected token")
+	return errors.New(fmt.Sprintf("unexpected token %v", token.ToString()))
 }
 
 func NewParser(r io.Reader) *Parser {

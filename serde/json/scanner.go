@@ -14,6 +14,10 @@ type Token struct {
 	lit string
 }
 
+func (tok Token) ToString() string {
+	return tok.lit
+}
+
 const (
 	TOK_EOF = iota
 	TOK_INVALID
@@ -125,7 +129,7 @@ func (s *Scanner) scanNumber() Token {
 		} else {
 			return Token{
 				typ: TOK_INVALID,
-				lit: "",
+				lit: string(ch),
 			}
 		}
 	}
@@ -187,6 +191,26 @@ func (s *Scanner) Scan() Token {
 			typ: TOK_COLON,
 			lit: ":",
 		}
+	} else if ch == '{' {
+		return Token{
+			typ: TOK_OPEN_DOCUMENT,
+			lit: "{",
+		}
+	} else if ch == '}' {
+		return Token{
+			typ: TOK_OPEN_DOCUMENT,
+			lit: "}",
+		}
+	} else if ch == '[' {
+		return Token{
+			typ: TOK_OPEN_ARRAY,
+			lit: "[",
+		}
+	} else if ch == ']' {
+		return Token{
+			typ: TOK_CLOSE_ARRAY,
+			lit: "]",
+		}
 	} else if ch == ',' {
 		return Token{
 			typ: TOK_COMMA,
@@ -195,12 +219,12 @@ func (s *Scanner) Scan() Token {
 	} else if ch == eof {
 		return Token{
 			typ: TOK_EOF,
-			lit: "",
+			lit: "[EOF]",
 		}
 	} else {
 		return Token{
 			typ: TOK_INVALID,
-			lit: "",
+			lit: string(ch),
 		}
 	}
 }
