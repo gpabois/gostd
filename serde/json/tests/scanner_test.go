@@ -10,18 +10,10 @@ import (
 )
 
 func Test_Scanner(t *testing.T) {
-	var buf bytes.Buffer
-	buf.WriteString("{\"val\":0}")
+	buf := bytes.NewBuffer(encoded_fixture())
+	scanner := json.NewScanner(buf)
 
-	scanner := json.NewScanner(&buf)
-
-	expectedTokens := []json.Token{
-		json.Token{}.OpenDocument(),
-		json.Token{}.String("val"),
-		json.Token{}.Colon(),
-		json.Token{}.Number("0"),
-		json.Token{}.CloseDocument(),
-	}
+	expectedTokens := fixture_tokens()
 	tokens := iter.CollectToSlice[[]json.Token, json.Token](scanner)
 
 	assert.Equal(t, expectedTokens, tokens)

@@ -10,7 +10,7 @@ import (
 )
 
 func Test_Encoder(t *testing.T) {
-	v := simpleStruct{}
+	v := fixture()
 
 	var buf bytes.Buffer
 	encoder.Encode(json.NewEncoder(&buf), v)

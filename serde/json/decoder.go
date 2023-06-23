@@ -2,6 +2,7 @@ package json
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"reflect"
 	"time"
@@ -67,12 +68,12 @@ func (dec *Decoder) IterMap(ast any) result.Result[iter.Iterator[decoder.Element
 	switch node := ast.(type) {
 	case Json:
 		if !node.IsDocument() {
-			return result.Result[iter.Iterator[decoder.Element]]{}.Failed(errors.New("expecting a map"))
+			return result.Result[iter.Iterator[decoder.Element]]{}.Failed(errors.New(fmt.Sprintf("expecting a map, got %v", reflect.TypeOf(node))))
 		}
 		return dec.IterMap(node.ExpectDocument())
 	case Value:
 		if !node.IsDocument() {
-			return result.Result[iter.Iterator[decoder.Element]]{}.Failed(errors.New("expecting an array"))
+			return result.Result[iter.Iterator[decoder.Element]]{}.Failed(errors.New(fmt.Sprintf("expecting an array, got %v", reflect.TypeOf(node))))
 		}
 		return dec.IterMap(node.ExpectArray())
 	case Document:

@@ -10,12 +10,10 @@ import (
 )
 
 func Test_Decoder(t *testing.T) {
-	v := simpleStruct{}
-
-	var buf bytes.Buffer
-	buf.WriteString("{\"val\":0}")
-	res := decoder.Decode[simpleStruct](json.NewDecoder(&buf))
+	expectedValue := fixture()
+	buf := bytes.NewBuffer(encoded_fixture())
+	res := decoder.Decode[simple](json.NewDecoder(buf))
 
 	assert.True(t, res.IsSuccess(), res.UnwrapError())
-	assert.Equal(t, v, res.Expect())
+	assert.Equal(t, expectedValue, res.Expect())
 }

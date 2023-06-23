@@ -31,7 +31,7 @@ func (json Json) Document(document Document) Json {
 }
 
 func (json Json) IsDocument() bool {
-	return json.set == 1
+	return json.set == 2
 }
 
 func (json Json) ExpectDocument() Document {
@@ -166,7 +166,7 @@ func (val Value) IsInteger() bool {
 }
 
 func (val Value) ExpectInteger() int {
-	if !val.IsArray() {
+	if !val.IsInteger() {
 		panic("not an integer")
 	}
 
@@ -181,7 +181,7 @@ func (val Value) Integer(ival int) Value {
 }
 
 func (val Value) IsFloat() bool {
-	return val.set == VALUE_INTEGER
+	return val.set == VALUE_FLOAT
 }
 
 func (val Value) ExpectFloat() float64 {

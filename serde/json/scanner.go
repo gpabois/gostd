@@ -133,6 +133,14 @@ func (s *Scanner) Next() option.Option[Token] {
 }
 
 func (s *Scanner) Scan() Token {
+	tok := s.scan()
+	for ; tok.typ == TOK_WS; tok = s.scan() {
+	}
+
+	return tok
+}
+
+func (s *Scanner) scan() Token {
 	// Read character
 	ch := s.read()
 
@@ -151,7 +159,7 @@ func (s *Scanner) Scan() Token {
 	} else if ch == ']' {
 		return Token{}.CloseArray()
 	} else if ch == ',' {
-		return Token{}.Colon()
+		return Token{}.Comma()
 	} else if isDigit(ch) {
 		s.rewind()
 		return s.scanNumber()

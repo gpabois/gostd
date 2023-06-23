@@ -35,6 +35,27 @@ func (tok Token) CloseArray() Token {
 	}
 }
 
+func (tok Token) True() Token {
+	return Token{
+		typ: TOK_TRUE,
+		lit: "true",
+	}
+}
+
+func (tok Token) False() Token {
+	return Token{
+		typ: TOK_FALSE,
+		lit: "false",
+	}
+}
+
+func (tok Token) Null() Token {
+	return Token{
+		typ: TOK_NULL,
+		lit: "null",
+	}
+}
+
 func (tok Token) String(str string) Token {
 	return Token{
 		typ: TOK_STRING,
