@@ -6,12 +6,49 @@ import (
 	"io"
 
 	"github.com/gpabois/gostd/ops"
+	"github.com/gpabois/gostd/option"
 )
 
 type TokenType int
+
 type Token struct {
 	typ TokenType
 	lit string
+}
+
+func (tok Token) OpenDocument() Token {
+	return Token{
+		typ: TOK_OPEN_DOCUMENT,
+		lit: "{",
+	}
+}
+
+func (tok Token) CloseDocument() Token {
+	return Token{
+		typ: TOK_CLOSE_DOCUMENT,
+		lit: "}",
+	}
+}
+
+func (tok Token) String(str string) Token {
+	return Token{
+		typ: TOK_STRING,
+		lit: str,
+	}
+}
+
+func (tok Token) Colon() Token {
+	return Token{
+		typ: TOK_COLON,
+		lit: ",",
+	}
+}
+
+func (tok Token) Number(number string) Token {
+	return Token{
+		typ: TOK_NUMBER,
+		lit: number,
+	}
 }
 
 func (tok Token) ToString() string {
@@ -170,6 +207,16 @@ func (s *Scanner) scanString() Token {
 		prev = ch
 	}
 
+}
+
+func (s *Scanner) Next() option.Option[Token] {
+	tok := s.Scan()
+
+	if tok.typ == TOK_EOF {
+		return option.None[Token]()
+	}
+
+	return option.Some(tok)
 }
 
 func (s *Scanner) Scan() Token {
