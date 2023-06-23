@@ -8,6 +8,7 @@ import (
 
 	"github.com/gpabois/gostd/iter"
 	"github.com/gpabois/gostd/option"
+	"github.com/gpabois/gostd/reflectutil"
 	"github.com/gpabois/gostd/result"
 )
 
@@ -18,8 +19,10 @@ type Element interface {
 
 //go:generate mockery
 type Decoder interface {
-	// Init the decoder and return data to be decoded along the way
-	Init() result.Result[any]
+	// Return cursor to data to be decoded
+	GetCursor() result.Result[any]
+	// Check if null data (for option)
+	IsNull(data any) bool
 	// Decode time
 	DecodeTime(data any, typ reflect.Type) result.Result[reflect.Value]
 	// Decode a primary type
@@ -30,16 +33,11 @@ type Decoder interface {
 	IterMap(data any) result.Result[iter.Iterator[Element]]
 }
 
-func searchElement(decoder Decoder, node any, key string) result.Result[option.Option[Element]] {
-	res := decoder.IterMap(node)
-
-	if res.HasFailed() {
-		return result.Result[option.Option[Element]]{}.Failed(res.UnwrapError())
-	}
-
-	return result.Success(iter.Find(
-		res.Expect(),
-		func(el Element) bool { return el.Key() == key },
+func searchElement(node any, key string, elements iter.Iterator[Element]) result.Result[option.Option[Element]] {
+	return result.Success(iter.Find(elements,
+		func(el Element) bool {
+			return el.Key() == key
+		},
 	))
 }
 
@@ -115,46 +113,71 @@ func decodeMap(decoder Decoder, encoded any, typ reflect.Type) result.Result[ref
 }
 
 func decodeStruct(decoder Decoder, encoded any, typ reflect.Type) result.Result[reflect.Value] {
-	val := reflect.New(typ)
+	val := reflect.New(typ).Elem()
+
+	elementsRes := decoder.IterMap(encoded)
+	if elementsRes.HasFailed() {
+		return result.Result[reflect.Value]{}.Failed(elementsRes.UnwrapError())
+	}
+	elements := iter.CollectToSlice[[]Element](elementsRes.Expect())
+
 	for i := 0; i < typ.NumField(); i++ {
 		field := val.Field(i)
 		fieldName := typ.Field(i).Name
+
 		marshalName, ok := typ.Field(i).Tag.Lookup("serde")
+
 		if ok {
 			fieldName = marshalName
 		}
 
-		cOptRes := searchElement(decoder, encoded, fieldName)
+		cOptRes := searchElement(encoded, fieldName, iter.IterSlice(&elements))
+
 		if cOptRes.HasFailed() {
 			return result.Result[reflect.Value]{}.Failed(cOptRes.UnwrapError())
 		}
-		cOpt := cOptRes.Expect()
 
-		if cOpt.IsNone() || !field.IsValid() {
+		cOpt := cOptRes.Expect()
+		if cOpt.IsNone() {
 			continue
 		}
 
-		// Decode option
-		if field.CanAddr() && option.IsMutableOption(field.Addr().Interface()) {
-			innerType := field.Interface().(option.IOption).TypeOf()
-			res := decode(decoder, cOpt.Expect(), innerType)
-			if res.HasFailed() {
-				return result.Failed[reflect.Value](res.UnwrapError())
-			}
-			resSet := field.Addr().Interface().(option.IMutableOption).TrySet(res.Expect())
-			if resSet.HasFailed() {
-				return result.Failed[reflect.Value](res.UnwrapError())
-			}
-		} else { // Decode normally
-			res := decode(decoder, cOpt.Expect(), field.Type())
-			if res.HasFailed() {
-				return result.Failed[reflect.Value](res.UnwrapError())
-			}
-			field.Set(res.Expect())
+		res := decode(decoder, cOpt.Expect().Value(), field.Type())
+
+		if res.HasFailed() {
+			return result.Failed[reflect.Value](res.UnwrapError())
 		}
+
+		// Set the field's value
+		field.Set(res.Expect())
+
 	}
 
-	return result.Success(val.Elem())
+	return result.Success(val)
+}
+
+// Decode optional value
+func decodeOption(decoder Decoder, encoded any, optType reflect.Type) result.Result[reflect.Value] {
+	ptrOpt := reflect.New(optType)
+
+	if decoder.IsNull(encoded) {
+		return result.Success(ptrOpt.Elem())
+	}
+
+	innerType := option.Reflect_GetInnerType(optType)
+	decRes := decode(decoder, encoded, innerType)
+
+	if decRes.HasFailed() {
+		return result.Result[reflect.Value]{}.Failed(decRes.UnwrapError())
+	}
+
+	setRes := option.Reflect_TrySome(ptrOpt, decRes.Expect())
+
+	if setRes.HasFailed() {
+		return result.Result[reflect.Value]{}.Failed(setRes.UnwrapError())
+	}
+
+	return result.Success(ptrOpt.Elem())
 }
 
 // Try to decode time
@@ -172,10 +195,10 @@ func decode(decoder Decoder, encoded any, typ reflect.Type) result.Result[reflec
 	case reflect.Map:
 		return decodeMap(decoder, encoded, typ)
 	case reflect.Struct:
-		// Decode time
-		var t time.Time
-		if typ == reflect.TypeOf(t) {
+		if typ == reflectutil.TypeOf[time.Time]() { // Decode time
 			return decodeTime(decoder, encoded, typ)
+		} else if option.Reflect_IsOptionType(typ) { // Decode option
+			return decodeOption(decoder, encoded, typ)
 		}
 		// Decode as a regular struct
 		return decodeStruct(decoder, encoded, typ)
@@ -186,11 +209,11 @@ func decode(decoder Decoder, encoded any, typ reflect.Type) result.Result[reflec
 
 func Decode[T any](decoder Decoder) result.Result[T] {
 	var v T
-	initVal := decoder.Init()
-	if initVal.HasFailed() {
-		return result.Result[T]{}.Failed(initVal.UnwrapError())
+	cursorRes := decoder.GetCursor()
+	if cursorRes.HasFailed() {
+		return result.Result[T]{}.Failed(cursorRes.UnwrapError())
 	}
-	resVal := decode(decoder, initVal.Expect(), reflect.TypeOf(v))
+	resVal := decode(decoder, cursorRes.Expect(), reflect.TypeOf(v))
 	if resVal.HasFailed() {
 		return result.Result[T]{}.Failed(resVal.UnwrapError())
 	}

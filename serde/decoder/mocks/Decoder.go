@@ -112,8 +112,8 @@ func (_c *Decoder_DecodeTime_Call) RunAndReturn(run func(interface{}, reflect.Ty
 	return _c
 }
 
-// Init provides a mock function with given fields:
-func (_m *Decoder) Init() result.Result[interface{}] {
+// GetCursor provides a mock function with given fields:
+func (_m *Decoder) GetCursor() result.Result[interface{}] {
 	ret := _m.Called()
 
 	var r0 result.Result[interface{}]
@@ -126,29 +126,71 @@ func (_m *Decoder) Init() result.Result[interface{}] {
 	return r0
 }
 
-// Decoder_Init_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Init'
-type Decoder_Init_Call struct {
+// Decoder_GetCursor_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCursor'
+type Decoder_GetCursor_Call struct {
 	*mock.Call
 }
 
-// Init is a helper method to define mock.On call
-func (_e *Decoder_Expecter) Init() *Decoder_Init_Call {
-	return &Decoder_Init_Call{Call: _e.mock.On("Init")}
+// GetCursor is a helper method to define mock.On call
+func (_e *Decoder_Expecter) GetCursor() *Decoder_GetCursor_Call {
+	return &Decoder_GetCursor_Call{Call: _e.mock.On("GetCursor")}
 }
 
-func (_c *Decoder_Init_Call) Run(run func()) *Decoder_Init_Call {
+func (_c *Decoder_GetCursor_Call) Run(run func()) *Decoder_GetCursor_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Decoder_Init_Call) Return(_a0 result.Result[interface{}]) *Decoder_Init_Call {
+func (_c *Decoder_GetCursor_Call) Return(_a0 result.Result[interface{}]) *Decoder_GetCursor_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Decoder_Init_Call) RunAndReturn(run func() result.Result[interface{}]) *Decoder_Init_Call {
+func (_c *Decoder_GetCursor_Call) RunAndReturn(run func() result.Result[interface{}]) *Decoder_GetCursor_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// IsNull provides a mock function with given fields: data
+func (_m *Decoder) IsNull(data interface{}) bool {
+	ret := _m.Called(data)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(interface{}) bool); ok {
+		r0 = rf(data)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Decoder_IsNull_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsNull'
+type Decoder_IsNull_Call struct {
+	*mock.Call
+}
+
+// IsNull is a helper method to define mock.On call
+//   - data interface{}
+func (_e *Decoder_Expecter) IsNull(data interface{}) *Decoder_IsNull_Call {
+	return &Decoder_IsNull_Call{Call: _e.mock.On("IsNull", data)}
+}
+
+func (_c *Decoder_IsNull_Call) Run(run func(data interface{})) *Decoder_IsNull_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Decoder_IsNull_Call) Return(_a0 bool) *Decoder_IsNull_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Decoder_IsNull_Call) RunAndReturn(run func(interface{}) bool) *Decoder_IsNull_Call {
 	_c.Call.Return(run)
 	return _c
 }

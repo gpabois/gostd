@@ -7,11 +7,11 @@ import (
 	"github.com/gpabois/gostd/result"
 )
 
-type IMutableOption interface {
-	TrySet(value any) result.Result[bool]
+type iMutableOption interface {
+	TrySome(value any) result.Result[bool]
 }
 
-type IOption interface {
+type iOption interface {
 	// Get the inner type of the option
 	TypeOf() reflect.Type
 
@@ -48,14 +48,8 @@ func (opt Option[T]) IntoResult(err error) result.Result[T] {
 	}
 }
 
-func IsMutableOption(value any) bool {
-	_, ok := value.(IMutableOption)
-	return ok
-}
-
 func IsOption(value any) bool {
-	_, ok := value.(IOption)
-	return ok
+	return Reflect_IsOptionType(reflect.TypeOf(value))
 }
 
 type Option[T any] struct {
@@ -76,7 +70,7 @@ func (opt Option[T]) TypeOf() reflect.Type {
 	return reflect.TypeOf((*T)(nil)).Elem()
 }
 
-func (opt *Option[T]) TrySet(val any) result.Result[bool] {
+func (opt *Option[T]) TrySome(val any) result.Result[bool] {
 	refVal := reflect.ValueOf(val)
 
 	if refVal.Kind() == reflect.Ptr && refVal.IsNil() {

@@ -23,8 +23,17 @@ func NewDecoder(r io.Reader) *Decoder {
 	}
 }
 
-func (decoder *Decoder) Init() result.Result[any] {
+func (decoder *Decoder) GetCursor() result.Result[any] {
 	return decoder.parser.Parse().ToAny()
+}
+
+func (decoder *Decoder) IsNull(data any) bool {
+	switch val := data.(type) {
+	case Value:
+		return val.IsNull()
+	default:
+		return false
+	}
 }
 
 func (decoder *Decoder) DecodeTime(data any, typ reflect.Type) result.Result[reflect.Value] {

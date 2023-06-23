@@ -6,6 +6,7 @@ import (
 
 	"github.com/gpabois/gostd/iter"
 	"github.com/gpabois/gostd/serde/json"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_Scanner(t *testing.T) {
@@ -21,5 +22,7 @@ func Test_Scanner(t *testing.T) {
 		json.Token{}.Number("0"),
 		json.Token{}.CloseDocument(),
 	}
-	tokens := iter.CollectToSlice[[]json.Token](scanner)
+	tokens := iter.CollectToSlice[[]json.Token, json.Token](scanner)
+
+	assert.Equal(t, expectedTokens, tokens)
 }

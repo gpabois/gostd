@@ -37,23 +37,23 @@ func NewEncoder(w io.Writer) *Encoder {
 }
 
 func (enc *Encoder) EncodeInt64(value int64) result.Result[bool] {
-	return enc.WriteString(fmt.Sprintf("%d", value))
+	return enc.write(fmt.Sprintf("%d", value))
 }
 func (enc *Encoder) EncodeFloat64(value float64) result.Result[bool] {
-	return enc.WriteString(fmt.Sprintf("%f", value))
+	return enc.write(fmt.Sprintf("%f", value))
 }
 func (enc *Encoder) EncodeBool(value bool) result.Result[bool] {
 	if value {
-		return enc.WriteString("true")
+		return enc.write("true")
 	} else {
-		return enc.WriteString("false")
+		return enc.write("false")
 	}
 }
 func (enc *Encoder) EncodeString(value string) result.Result[bool] {
-	return enc.WriteString(fmt.Sprintf("\"%s\"", value))
+	return enc.write(fmt.Sprintf("\"%s\"", value))
 }
 
-func (enc *Encoder) WriteString(s string) result.Result[bool] {
+func (enc *Encoder) write(s string) result.Result[bool] {
 	_, err := enc.writer.Write([]byte(s))
 
 	if err != nil {
@@ -65,7 +65,7 @@ func (enc *Encoder) WriteString(s string) result.Result[bool] {
 
 func (enc *Encoder) PushArray() result.Result[bool] {
 	enc.states.Push(encoderState{typ: ENCODER_ARRAY_STATE})
-	return enc.WriteString("[")
+	return enc.write("[")
 }
 
 func (enc *Encoder) PushArrayValue() result.Result[bool] {
@@ -81,7 +81,7 @@ func (enc *Encoder) PushArrayValue() result.Result[bool] {
 	}
 
 	if currentState.counter > 0 {
-		enc.WriteString(",")
+		enc.write(",")
 	}
 	enc.states.Push(encoderState{typ: ENCODER_ARRAY_VALUE_STATE})
 
@@ -90,7 +90,7 @@ func (enc *Encoder) PushArrayValue() result.Result[bool] {
 
 func (enc *Encoder) PushMap() result.Result[bool] {
 	enc.states.Push(encoderState{typ: ENCODER_MAP_STATE})
-	enc.WriteString("{")
+	enc.write("{")
 	return result.Success(true)
 }
 
@@ -108,7 +108,7 @@ func (enc *Encoder) PushMapKey() result.Result[bool] {
 	}
 
 	if currentState.counter > 0 {
-		if res := enc.WriteString(","); res.HasFailed() {
+		if res := enc.write(","); res.HasFailed() {
 			return result.Result[bool]{}.Failed(res.UnwrapError())
 		}
 	}
@@ -120,7 +120,7 @@ func (enc *Encoder) PushMapKey() result.Result[bool] {
 
 func (enc *Encoder) PushMapValue() result.Result[bool] {
 	enc.states.Push(encoderState{typ: ENCODER_MAP_VALUE_STATE})
-	enc.WriteString(":")
+	enc.write(":")
 	return result.Success(true)
 }
 
@@ -133,9 +133,9 @@ func (enc *Encoder) Pop() result.Result[bool] {
 
 	switch state.Expect().typ {
 	case ENCODER_MAP_STATE:
-		return enc.WriteString("}")
+		return enc.write("}")
 	case ENCODER_ARRAY_STATE:
-		return enc.WriteString("]")
+		return enc.write("]")
 	case ENCODER_ARRAY_VALUE_STATE:
 	case ENCODER_MAP_VALUE_STATE:
 	case ENCODER_MAP_KEY_STATE:

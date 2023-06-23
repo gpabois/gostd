@@ -199,6 +199,10 @@ func (val Value) Float(fval float64) Value {
 	}
 }
 
+func (val Value) IsNull() bool {
+	return val.set == VALUE_NULL
+}
+
 func (val Value) Null() Value {
 	return Value{
 		set: VALUE_NULL,

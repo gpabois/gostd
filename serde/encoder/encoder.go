@@ -88,7 +88,7 @@ func encodeStruct(enc Encoder, value reflect.Value) {
 		typ := value.Type()
 
 		for i := 0; i < typ.NumField(); i++ {
-			fieldValue := value.Field(i)
+			field := value.Field(i)
 			fieldName := typ.Field(i).Name
 
 			marshalName, ok := typ.Field(i).Tag.Lookup("serde")
@@ -96,10 +96,8 @@ func encodeStruct(enc Encoder, value reflect.Value) {
 				fieldName = marshalName
 			}
 
-			if option.IsOption(fieldValue.Interface()) {
-				optVal := fieldValue.Interface().(option.IOption)
-
-				// Don't set nil value
+			if option.Reflect_IsOptionType(field.Type()) {
+				optVal := option.Reflect_Get(field)
 				if optVal.IsNone() {
 					continue
 				}
@@ -112,7 +110,7 @@ func encodeStruct(enc Encoder, value reflect.Value) {
 				// Encode element's key
 				withMapKey(enc, func() { encode(enc, reflect.ValueOf(fieldName)) })
 				// Encode element's value
-				withMapValue(enc, func() { encode(enc, fieldValue) })
+				withMapValue(enc, func() { encode(enc, field) })
 			}
 		}
 	})

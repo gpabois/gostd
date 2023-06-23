@@ -5,6 +5,7 @@ import (
 
 	"github.com/gpabois/gostd/iter"
 	"github.com/gpabois/gostd/ops"
+	"github.com/gpabois/gostd/option"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,6 +28,12 @@ func Test_Filter_Success(t *testing.T) {
 	it := iter.Filter(iter.IterSlice(&[]int{1, 2, 3}), func(el int) bool { return el == 2 })
 	slice := iter.CollectToSlice[[]int](it)
 	assert.Equal(t, expectedSlice, slice)
+}
+
+func Test_Find_Success(t *testing.T) {
+	expectedValue := option.Some(2)
+	value := iter.Find(iter.IterSlice(&[]int{1, 2, 3}), func(el int) bool { return el == 2 })
+	assert.Equal(t, expectedValue, value)
 }
 
 func Test_Reduce_Success(t *testing.T) {
