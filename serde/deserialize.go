@@ -2,8 +2,6 @@ package serde
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	"io"
 
 	"github.com/gpabois/gostd/result"
@@ -16,7 +14,7 @@ func getDecoderFromReader(r io.Reader, contentType string) result.Result[decoder
 	case "application/json":
 		return result.Success[decoder.Decoder](json.NewDecoder(r))
 	default:
-		return result.Failed[decoder.Decoder](errors.New(fmt.Sprintf("cannot decode content-type '%s'", contentType)))
+		return result.Failed[decoder.Decoder](NewUnhandledContentType(contentType))
 	}
 }
 
@@ -36,7 +34,7 @@ func DeserializeFromReader[T any](r io.Reader, contentType string) result.Result
 func Deserialize[T any](value []byte, contentType string) result.Result[T] {
 	res := getDecoderFromBytes(value, contentType)
 	if res.HasFailed() {
-		return result.Result[T]{}.Failed(res.UnwrapError())
+		return result.Result[T]{}.Failed(NewDeserializeError(res.UnwrapError()))
 	}
 	return decoder.Decode[T](res.Expect())
 }
