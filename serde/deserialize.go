@@ -23,12 +23,28 @@ func getDecoderFromBytes(b []byte, contentType string) result.Result[decoder.Dec
 	return getDecoderFromReader(buf, contentType)
 }
 
+func DeserializeFromReaderInto[T any](r io.Reader, contentType string, ptr *T) result.Result[bool] {
+	res := getDecoderFromReader(r, contentType)
+	if res.HasFailed() {
+		return result.Result[bool]{}.Failed(res.UnwrapError())
+	}
+	return decoder.DecodeInto(res.Expect(), ptr)
+}
+
 func DeserializeFromReader[T any](r io.Reader, contentType string) result.Result[T] {
 	res := getDecoderFromReader(r, contentType)
 	if res.HasFailed() {
 		return result.Result[T]{}.Failed(res.UnwrapError())
 	}
 	return decoder.Decode[T](res.Expect())
+}
+
+func DeserializeInto[T any](value []byte, contentType string, ptr *T) result.Result[bool] {
+	res := getDecoderFromBytes(value, contentType)
+	if res.HasFailed() {
+		return result.Result[bool]{}.Failed(NewDeserializeError(res.UnwrapError()))
+	}
+	return decoder.DecodeInto(res.Expect(), ptr)
 }
 
 func Deserialize[T any](value []byte, contentType string) result.Result[T] {
