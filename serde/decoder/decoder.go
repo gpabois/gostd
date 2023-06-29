@@ -41,27 +41,40 @@ func searchElement(node any, key string, elements iter.Iterator[Element]) result
 	))
 }
 
-func decodeSlice(decoder Decoder, encoded any, typ reflect.Type) result.Result[reflect.Value] {
-	valTyp := typ.Elem()
+func decodeSliceWithPtr(decoder Decoder, encoded any, arrPtr reflect.Value) result.Result[bool] {
+	// Get the inner type of the slice
+	elType := arrPtr.Type().Elem().Elem()
 
+	//
 	iterRes := decoder.IterSlice(encoded)
-
 	if iterRes.HasFailed() {
-		return result.Result[reflect.Value]{}.Failed(iterRes.UnwrapError())
+		return result.Result[bool]{}.Failed(iterRes.UnwrapError())
 	}
-
+	// Decode each element
 	res := iter.Result_FromIter[[]reflect.Value](
 		iter.Map(
 			iterRes.Expect(),
 			func(encoded any) result.Result[reflect.Value] {
-				return decode(decoder, encoded, valTyp)
+				return decode(decoder, encoded, elType)
 			},
 		),
 	)
 
-	arr := reflect.New(typ)
+	if res.HasFailed() {
+		return result.Result[bool]{}.Failed(res.UnwrapError())
+	}
+
 	for _, el := range res.Expect() {
-		arr.Elem().Set(reflect.Append(arr.Elem(), el))
+		arrPtr.Elem().Set(reflect.Append(arrPtr.Elem(), el))
+	}
+
+	return result.Success(true)
+}
+
+func decodeSlice(decoder Decoder, encoded any, typ reflect.Type) result.Result[reflect.Value] {
+	arr := reflect.New(typ)
+	if res := decodeSliceWithPtr(decoder, encoded, arr); res.HasFailed() {
+		return result.Result[reflect.Value]{}.Failed(res.UnwrapError())
 	}
 	return result.Success(arr.Elem())
 }
@@ -96,33 +109,44 @@ func decodeMapElements(decoder Decoder, encoded any, typ reflect.Type) result.Re
 	)
 }
 
-func decodeMap(decoder Decoder, encoded any, typ reflect.Type) result.Result[reflect.Value] {
-	val := reflect.New(typ)
+func decodeMapWithPtr(decoder Decoder, encoded any, mapPtr reflect.Value) result.Result[bool] {
+	typ := mapPtr.Type().Elem()
 
 	res := decodeMapElements(decoder, encoded, typ)
+	if res.HasFailed() {
+		return result.Result[bool]{}.Failed(res.UnwrapError())
+	}
+
+	for _, el := range res.Expect() {
+		mapPtr.SetMapIndex(reflect.ValueOf(el.Key), el.Value)
+	}
+
+	return result.Success(true)
+}
+
+func decodeMap(decoder Decoder, encoded any, typ reflect.Type) result.Result[reflect.Value] {
+	mapPtr := reflect.New(typ)
+
+	res := decodeMapWithPtr(decoder, encoded, mapPtr)
 
 	if res.HasFailed() {
 		return result.Result[reflect.Value]{}.Failed(res.UnwrapError())
 	}
 
-	for _, el := range res.Expect() {
-		val.SetMapIndex(reflect.ValueOf(el.Key), el.Value)
-	}
-
-	return result.Success(val.Elem())
+	return result.Success(mapPtr.Elem())
 }
 
-func decodeStruct(decoder Decoder, encoded any, typ reflect.Type) result.Result[reflect.Value] {
-	val := reflect.New(typ).Elem()
+func decodeStructWithPtr(decoder Decoder, encoded any, structPtr reflect.Value) result.Result[bool] {
+	typ := structPtr.Type().Elem()
 
 	elementsRes := decoder.IterMap(encoded)
 	if elementsRes.HasFailed() {
-		return result.Result[reflect.Value]{}.Failed(elementsRes.UnwrapError())
+		return result.Result[bool]{}.Failed(elementsRes.UnwrapError())
 	}
 	elements := iter.CollectToSlice[[]Element](elementsRes.Expect())
 
 	for i := 0; i < typ.NumField(); i++ {
-		field := val.Field(i)
+		field := structPtr.Elem().Field(i).Addr()
 		fieldName := typ.Field(i).Name
 
 		marshalName, ok := typ.Field(i).Tag.Lookup("serde")
@@ -134,7 +158,7 @@ func decodeStruct(decoder Decoder, encoded any, typ reflect.Type) result.Result[
 		cOptRes := searchElement(encoded, fieldName, iter.IterSlice(&elements))
 
 		if cOptRes.HasFailed() {
-			return result.Result[reflect.Value]{}.Failed(cOptRes.UnwrapError())
+			return result.Result[bool]{}.Failed(cOptRes.UnwrapError())
 		}
 
 		cOpt := cOptRes.Expect()
@@ -142,18 +166,20 @@ func decodeStruct(decoder Decoder, encoded any, typ reflect.Type) result.Result[
 			continue
 		}
 
-		res := decode(decoder, cOpt.Expect().Value(), field.Type())
+		res := decodeWithPtr(decoder, cOpt.Expect().Value(), field)
 
 		if res.HasFailed() {
-			return result.Failed[reflect.Value](res.UnwrapError())
+			return result.Failed[bool](res.UnwrapError())
 		}
-
-		// Set the field's value
-		field.Set(res.Expect())
-
 	}
 
-	return result.Success(val)
+	return result.Success(true)
+}
+
+func decodeStruct(decoder Decoder, encoded any, typ reflect.Type) result.Result[reflect.Value] {
+	val := reflect.New(typ)
+	decodeStructWithPtr(decoder, encoded, val)
+	return result.Success(val.Elem())
 }
 
 // Decode optional value
@@ -185,6 +211,44 @@ func decodeTime(decoder Decoder, encoded any, typ reflect.Type) result.Result[re
 	return decoder.DecodeTime(encoded, typ)
 }
 
+func decodeWithPtr(decoder Decoder, encoded any, ptr reflect.Value) result.Result[bool] {
+	typ := ptr.Type().Elem()
+	switch typ.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Bool, reflect.Float32, reflect.Float64, reflect.String:
+		res := decoder.DecodePrimaryType(encoded, typ)
+		if res.HasFailed() {
+			return result.Result[bool]{}.Failed(res.UnwrapError())
+		}
+		ptr.Elem().Set(res.Expect())
+		return result.Success(true)
+	case reflect.Array, reflect.Slice:
+		return decodeSliceWithPtr(decoder, encoded, ptr)
+	case reflect.Map:
+		return decodeMapWithPtr(decoder, encoded, ptr)
+	case reflect.Struct:
+		if typ == reflectutil.TypeOf[time.Time]() { // Decode time
+			res := decodeTime(decoder, encoded, typ)
+			if res.HasFailed() {
+				return result.Result[bool]{}.Failed(res.UnwrapError())
+			}
+			ptr.Elem().Set(res.Expect())
+			return result.Success(true)
+		} else if option.Reflect_IsOptionType(typ) { // Decode option
+			res := decodeOption(decoder, encoded, typ)
+			if res.HasFailed() {
+				return result.Result[bool]{}.Failed(res.UnwrapError())
+			}
+			ptr.Elem().Set(res.Expect())
+			return result.Success(true)
+		}
+		// Decode as a regular struct
+		return decodeStructWithPtr(decoder, encoded, ptr)
+	default:
+		return result.Result[bool]{}.Failed(errors.New(fmt.Sprintf("type %v cannot be denormalised", typ.Kind())))
+	}
+}
+
 func decode(decoder Decoder, encoded any, typ reflect.Type) result.Result[reflect.Value] {
 	switch typ.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
@@ -205,6 +269,15 @@ func decode(decoder Decoder, encoded any, typ reflect.Type) result.Result[reflec
 	default:
 		return result.Result[reflect.Value]{}.Failed(errors.New(fmt.Sprintf("type %v cannot be denormalised", typ.Kind())))
 	}
+}
+
+func DecodeInto[T any](decoder Decoder, ptr *T) result.Result[bool] {
+	cursorRes := decoder.GetCursor()
+	if cursorRes.HasFailed() {
+		return result.Result[bool]{}.Failed(cursorRes.UnwrapError())
+	}
+	refPtr := reflect.ValueOf(ptr)
+	return decodeWithPtr(decoder, cursorRes.Expect(), refPtr)
 }
 
 func Decode[T any](decoder Decoder) result.Result[T] {

@@ -14,8 +14,9 @@ import (
 )
 
 type simple struct {
-	Opt option.Option[bool]
-	Val int `serde:"val"`
+	Opt      option.Option[bool]
+	Val      int `serde:"val"`
+	OtherVal int
 }
 
 type element struct {
@@ -37,6 +38,34 @@ func (el element) Value() any {
 	return el.val
 }
 
+func Test_Decoder_Into(t *testing.T) {
+	d := mocks.NewDecoder(t)
+
+	d.EXPECT().GetCursor().Return(result.Success[any](0))
+
+	value := simple{
+		OtherVal: 10,
+	}
+
+	mapElements := elements{{"val", 0}, {"Opt", true}}
+	d.EXPECT().IterMap(0).Return(result.Success(mapElements.Iter()))
+	d.EXPECT().IterMap(0).Return(result.Success(mapElements.Iter()))
+
+	d.EXPECT().DecodePrimaryType(0, reflectutil.TypeOf[int]()).Return(result.Success(reflect.ValueOf(0)))
+
+	d.EXPECT().IsNull(true).Return(false)
+	d.EXPECT().DecodePrimaryType(true, reflectutil.TypeOf[bool]()).Return(result.Success(reflect.ValueOf(true)))
+
+	res := decoder.DecodeInto(d, &value)
+	expectedValue := simple{
+		Val:      0,
+		Opt:      option.Some(true),
+		OtherVal: 10,
+	}
+	assert.True(t, res.IsSuccess(), res.UnwrapError())
+	assert.Equal(t, expectedValue, value)
+}
+
 func Test_Decoder(t *testing.T) {
 	d := mocks.NewDecoder(t)
 
@@ -51,11 +80,14 @@ func Test_Decoder(t *testing.T) {
 	d.EXPECT().IsNull(true).Return(false)
 	d.EXPECT().DecodePrimaryType(true, reflectutil.TypeOf[bool]()).Return(result.Success(reflect.ValueOf(true)))
 
-	res := decoder.Decode[simple](d)
 	expectedValue := simple{
-		Val: 0,
-		Opt: option.Some(true),
+		Val:      0,
+		Opt:      option.Some(true),
+		OtherVal: 5,
 	}
+
+	res := decoder.Decode[simple](d)
+
 	assert.True(t, res.IsSuccess(), res.UnwrapError())
 	assert.Equal(t, expectedValue, res.Expect())
 }
