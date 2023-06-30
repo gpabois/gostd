@@ -105,7 +105,7 @@ func encodeStruct(enc Encoder, value reflect.Value) {
 				// Encode element's key
 				withMapKey(enc, func() { encode(enc, reflect.ValueOf(fieldName)) })
 				// Encode element's value
-				withMapValue(enc, func() { encode(enc, reflect.ValueOf(optVal.Get())) })
+				withMapValue(enc, func() { encode(enc, optVal.Expect()) })
 			} else {
 				// Encode element's key
 				withMapKey(enc, func() { encode(enc, reflect.ValueOf(fieldName)) })

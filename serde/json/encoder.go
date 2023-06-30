@@ -83,6 +83,7 @@ func (enc *Encoder) PushArrayValue() result.Result[bool] {
 	if currentState.counter > 0 {
 		enc.write(",")
 	}
+	currentState.counter++
 	enc.states.Push(encoderState{typ: ENCODER_ARRAY_VALUE_STATE})
 
 	return result.Success(true)

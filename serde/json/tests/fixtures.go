@@ -27,13 +27,7 @@ func fixture() simple {
 
 func encoded_fixture() []byte {
 	var buf bytes.Buffer
-	buf.WriteString(`{
-		"boolean_optional_value": true, 
-		"integer_value": 10,
-		"float_value": 1.10,
-		"string_value": "Hello world!",
-		"array_value": [true, false, true]
-	}`)
+	buf.WriteString(`{"boolean_optional_value":true,"integer_value":10,"float_value":1.100000,"string_value":"Hello world!","array_value":[true,false,true]}`)
 	return buf.Bytes()
 }
 

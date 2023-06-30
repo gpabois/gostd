@@ -15,7 +15,7 @@ func Test_Encoder(t *testing.T) {
 	var buf bytes.Buffer
 	encoder.Encode(json.NewEncoder(&buf), v)
 
-	value := buf.String()
-	expectedValue := "{\"val\":0}"
+	value := string(buf.Bytes())
+	expectedValue := string(encoded_fixture())
 	assert.Equal(t, expectedValue, value)
 }

@@ -2,7 +2,6 @@ package json
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"reflect"
 	"time"
@@ -68,12 +67,12 @@ func (dec *Decoder) IterMap(ast any) result.Result[iter.Iterator[decoder.Element
 	switch node := ast.(type) {
 	case Json:
 		if !node.IsDocument() {
-			return result.Result[iter.Iterator[decoder.Element]]{}.Failed(errors.New(fmt.Sprintf("expecting a map, got %v", reflect.TypeOf(node))))
+			return result.Result[iter.Iterator[decoder.Element]]{}.Failed(decoder.NewExpectingMapError(reflect.TypeOf(node)))
 		}
 		return dec.IterMap(node.ExpectDocument())
 	case Value:
 		if !node.IsDocument() {
-			return result.Result[iter.Iterator[decoder.Element]]{}.Failed(errors.New(fmt.Sprintf("expecting an array, got %v", reflect.TypeOf(node))))
+			return result.Result[iter.Iterator[decoder.Element]]{}.Failed(decoder.NewExpectingMapError(reflect.TypeOf(node)))
 		}
 		return dec.IterMap(node.ExpectArray())
 	case Document:
@@ -84,26 +83,26 @@ func (dec *Decoder) IterMap(ast any) result.Result[iter.Iterator[decoder.Element
 			},
 		))
 	default:
-		return result.Result[iter.Iterator[decoder.Element]]{}.Failed(errors.New("not a map"))
+		return result.Result[iter.Iterator[decoder.Element]]{}.Failed(decoder.NewExpectingMapError(reflect.TypeOf(node)))
 	}
 }
 
-func (decoder *Decoder) IterSlice(ast any) result.Result[iter.Iterator[any]] {
+func (d *Decoder) IterSlice(ast any) result.Result[iter.Iterator[any]] {
 	switch node := ast.(type) {
 	case Json:
 		if !node.IsArray() {
-			return result.Result[iter.Iterator[any]]{}.Failed(errors.New("expecting an array"))
+			return result.Result[iter.Iterator[any]]{}.Failed(decoder.NewExpectingSliceError(reflect.TypeOf(node)))
 		}
-		return decoder.IterSlice(node.ExpectArray())
+		return d.IterSlice(node.ExpectArray())
 	case Value:
 		if !node.IsArray() {
-			return result.Result[iter.Iterator[any]]{}.Failed(errors.New("expecting an array"))
+			return result.Result[iter.Iterator[any]]{}.Failed(decoder.NewExpectingSliceError(reflect.TypeOf(node)))
 		}
-		return decoder.IterSlice(node.ExpectArray())
+		return d.IterSlice(node.ExpectArray())
 	case Array:
 		return result.Success(iter.Map(iter.IterSlice(&node.Elements), func(el Value) any { return any(el) }))
 	default:
-		return result.Result[iter.Iterator[any]]{}.Failed(errors.New("not an array"))
+		return result.Result[iter.Iterator[any]]{}.Failed(decoder.NewExpectingSliceError(reflect.TypeOf(node)))
 	}
 }
 
@@ -117,27 +116,27 @@ func decodePrimaryTypes(ast any, typ reflect.Type) result.Result[reflect.Value] 
 	switch typ.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if !val.IsInteger() {
-			return result.Result[reflect.Value]{}.Failed(errors.New("not an integer"))
+			return result.Result[reflect.Value]{}.Failed(decoder.NewWrongTypeError(typ, reflect.TypeOf(val)))
 		}
 
 		return result.Success(reflect.ValueOf(val.ExpectInteger()))
 	case reflect.Float32, reflect.Float64:
 		if !val.IsFloat() {
-			return result.Result[reflect.Value]{}.Failed(errors.New("not a float"))
+			return result.Result[reflect.Value]{}.Failed(decoder.NewWrongTypeError(typ, reflect.TypeOf(val)))
 		}
 		return result.Success(reflect.ValueOf(val.ExpectFloat()))
 	case reflect.Bool:
 		if !val.IsBoolean() {
-			return result.Result[reflect.Value]{}.Failed(errors.New("not a boolean"))
+			return result.Result[reflect.Value]{}.Failed(decoder.NewWrongTypeError(typ, reflect.TypeOf(val)))
 		}
 		return result.Success(reflect.ValueOf(val.ExpectBoolean()))
 	case reflect.String:
 		if !val.IsString() {
-			return result.Result[reflect.Value]{}.Failed(errors.New("not a string"))
+			return result.Result[reflect.Value]{}.Failed(decoder.NewWrongTypeError(typ, reflect.TypeOf(val)))
 		}
 		return result.Success(reflect.ValueOf(val.ExpectString()))
 
 	default:
-		return result.Result[reflect.Value]{}.Failed(errors.New("not a primary type"))
+		return result.Result[reflect.Value]{}.Failed(decoder.NewExpectingPrimaryTypeError(reflect.TypeOf(val)))
 	}
 }
