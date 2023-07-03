@@ -1,6 +1,9 @@
 package decoder
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 type ExpectingPrimaryTypeError struct {
 	Type reflect.Type
@@ -44,7 +47,7 @@ type WrongTypeError struct {
 }
 
 func (err WrongTypeError) Error() string {
-	return "value type is not the expected one"
+	return fmt.Sprintf("unexpected value type, expecting %s, got %s", err.ExpectedType, err.Type)
 }
 
 func NewWrongTypeError(typ reflect.Type, expectedTyp reflect.Type) error {
