@@ -22,12 +22,22 @@ func fixture() simple {
 	}
 }
 
-func encoded_fixture() map[string]any {
+func encoded_str_fixture() map[string]any {
 	return map[string]any{
 		"boolean_optional_value": "true",
 		"integer_value":          "10",
 		"float_value":            "1.10",
 		"string_value":           "Hello world!",
 		"array_value":            []string{"true", "false", "true"},
+	}
+}
+
+func encoded_fixture() map[string]any {
+	return map[string]any{
+		"boolean_optional_value": true,
+		"integer_value":          int64(10),
+		"float_value":            float64(1.10),
+		"string_value":           "Hello world!",
+		"array_value":            []any{true, false, true},
 	}
 }

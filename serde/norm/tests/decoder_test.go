@@ -10,7 +10,7 @@ import (
 
 func Test_Decoder(t *testing.T) {
 	expectedValue := fixture()
-	normValue := encoded_fixture()
+	normValue := encoded_str_fixture()
 
 	d := norm.NewDecoder(normValue)
 	res := decoder.Decode[simple](d)
