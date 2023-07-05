@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gpabois/gostd/iter"
+	reflectutil "github.com/gpabois/gostd/reflectutil/cast"
 	"github.com/gpabois/gostd/result"
 	"github.com/gpabois/gostd/serde/decoder"
 )
@@ -74,7 +75,7 @@ func (dec *Decoder) IterMap(ast any) result.Result[iter.Iterator[decoder.Element
 		if !node.IsDocument() {
 			return result.Result[iter.Iterator[decoder.Element]]{}.Failed(decoder.NewExpectingMapError(reflect.TypeOf(node)))
 		}
-		return dec.IterMap(node.ExpectArray())
+		return dec.IterMap(node.ExpectDocument())
 	case Document:
 		return result.Success(iter.Map(
 			iter.IterSlice(&node.Pairs),
@@ -119,22 +120,22 @@ func decodePrimaryTypes(ast any, typ reflect.Type) result.Result[reflect.Value] 
 			return result.Result[reflect.Value]{}.Failed(decoder.NewWrongTypeError(typ, reflect.TypeOf(val)))
 		}
 
-		return result.Success(reflect.ValueOf(val.ExpectInteger()))
+		return reflectutil.Cast(val.ExpectInteger(), typ).IntoResult(decoder.NewWrongTypeError(typ, reflect.TypeOf(val)))
 	case reflect.Float32, reflect.Float64:
 		if !val.IsFloat() {
 			return result.Result[reflect.Value]{}.Failed(decoder.NewWrongTypeError(typ, reflect.TypeOf(val)))
 		}
-		return result.Success(reflect.ValueOf(val.ExpectFloat()))
+		return reflectutil.Cast(val.ExpectFloat(), typ).IntoResult(decoder.NewWrongTypeError(typ, reflect.TypeOf(val)))
 	case reflect.Bool:
 		if !val.IsBoolean() {
 			return result.Result[reflect.Value]{}.Failed(decoder.NewWrongTypeError(typ, reflect.TypeOf(val)))
 		}
-		return result.Success(reflect.ValueOf(val.ExpectBoolean()))
+		return reflectutil.Cast(val.ExpectBoolean(), typ).IntoResult(decoder.NewWrongTypeError(typ, reflect.TypeOf(val)))
 	case reflect.String:
 		if !val.IsString() {
 			return result.Result[reflect.Value]{}.Failed(decoder.NewWrongTypeError(typ, reflect.TypeOf(val)))
 		}
-		return result.Success(reflect.ValueOf(val.ExpectString()))
+		return reflectutil.Cast(val.ExpectString(), typ).IntoResult(decoder.NewWrongTypeError(typ, reflect.TypeOf(val)))
 
 	default:
 		return result.Result[reflect.Value]{}.Failed(decoder.NewExpectingPrimaryTypeError(reflect.TypeOf(val)))
