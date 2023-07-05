@@ -3,6 +3,7 @@ package serde
 import (
 	"bytes"
 	"io"
+	"reflect"
 
 	"github.com/gpabois/gostd/result"
 	"github.com/gpabois/gostd/serde/decoder"
@@ -53,4 +54,12 @@ func Deserialize[T any](value []byte, contentType string) result.Result[T] {
 		return result.Result[T]{}.Failed(NewDeserializeError(res.UnwrapError()))
 	}
 	return decoder.Decode[T](res.Expect())
+}
+
+func Reflect_Deserialize[T any](value []byte, contentType string, typ reflect.Type) result.Result[any] {
+	res := getDecoderFromBytes(value, contentType)
+	if res.HasFailed() {
+		return result.Result[any]{}.Failed(NewDeserializeError(res.UnwrapError()))
+	}
+	return decoder.Reflect_Decode(res.Expect(), typ)
 }

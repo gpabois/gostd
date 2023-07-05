@@ -30,6 +30,6 @@ func Serialize[T any](value T, contentType string) result.Result[[]byte] {
 	if res.HasFailed() {
 		return result.Result[[]byte]{}.Failed(res.UnwrapError())
 	}
-	encoder.Encode[T](res.Expect(), value)
+	encoder.Encode(res.Expect(), value)
 	return result.Success(buf.Bytes())
 }

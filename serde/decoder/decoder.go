@@ -271,6 +271,32 @@ func decode(decoder Decoder, encoded any, typ reflect.Type) result.Result[reflec
 	}
 }
 
+func Reflect_Decode(decoder Decoder, typ reflect.Type) result.Result[any] {
+	cursorRes := decoder.GetCursor()
+	if cursorRes.HasFailed() {
+		return result.Result[any]{}.Failed(cursorRes.UnwrapError())
+	}
+
+	ptr := reflect.New(typ)
+	res := decodeWithPtr(decoder, cursorRes.Expect(), ptr)
+
+	if res.HasFailed() {
+		return result.Result[any]{}.Failed(res.UnwrapError())
+	}
+
+	return result.Success(ptr.Elem().Interface())
+}
+
+func Reflect_DecodeInto(decoder Decoder, value any) result.Result[bool] {
+	cursorRes := decoder.GetCursor()
+	if cursorRes.HasFailed() {
+		return result.Result[bool]{}.Failed(cursorRes.UnwrapError())
+	}
+
+	ptr := reflect.ValueOf(value)
+	return decodeWithPtr(decoder, cursorRes.Expect(), ptr)
+}
+
 func DecodeInto[T any](decoder Decoder, ptr *T) result.Result[bool] {
 	cursorRes := decoder.GetCursor()
 	if cursorRes.HasFailed() {
