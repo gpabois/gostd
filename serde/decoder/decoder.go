@@ -213,6 +213,10 @@ func decodeTime(decoder Decoder, encoded any, typ reflect.Type) result.Result[re
 
 func decodeWithPtr(decoder Decoder, encoded any, ptr reflect.Value) result.Result[bool] {
 	typ := ptr.Type().Elem()
+	if typ == reflect.TypeOf(encoded) {
+		ptr.Elem().Set(reflect.ValueOf(ptr))
+		return result.Success(true)
+	}
 	switch typ.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Bool, reflect.Float32, reflect.Float64, reflect.String:
@@ -250,6 +254,9 @@ func decodeWithPtr(decoder Decoder, encoded any, ptr reflect.Value) result.Resul
 }
 
 func decode(decoder Decoder, encoded any, typ reflect.Type) result.Result[reflect.Value] {
+	if typ == reflect.TypeOf(encoded) {
+		return result.Success(reflect.ValueOf(encoded))
+	}
 	switch typ.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Bool, reflect.Float32, reflect.Float64, reflect.String:
