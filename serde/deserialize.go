@@ -56,6 +56,14 @@ func Deserialize[T any](value []byte, contentType string) result.Result[T] {
 	return decoder.Decode[T](res.Expect())
 }
 
+func Reflect_DeserializeInto[T any](value []byte, contentType string, val any) result.Result[bool] {
+	res := getDecoderFromBytes(value, contentType)
+	if res.HasFailed() {
+		return result.Result[bool]{}.Failed(NewDeserializeError(res.UnwrapError()))
+	}
+	return decoder.Reflect_DecodeInto(res.Expect(), val)
+}
+
 func Reflect_Deserialize[T any](value []byte, contentType string, typ reflect.Type) result.Result[any] {
 	res := getDecoderFromBytes(value, contentType)
 	if res.HasFailed() {
