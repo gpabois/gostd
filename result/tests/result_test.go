@@ -10,12 +10,12 @@ import (
 
 func Test_From_Success(t *testing.T) {
 	val := 10
-	res := result.From(&val, nil)
+	res := result.FromRaw(&val, nil)
 	assert.True(t, res.IsSuccess())
 }
 
 func Test_From_Error(t *testing.T) {
-	res := result.From[int](nil, errors.New("error"))
+	res := result.FromRaw[int](nil, errors.New("error"))
 	assert.True(t, res.HasFailed())
 }
 
@@ -24,7 +24,7 @@ func Test_Success(t *testing.T) {
 	assert.True(t, res.IsSuccess())
 	assert.Equal(t, 10, res.Expect())
 
-	val, err := res.Unwrap()
+	val, err := res.UnwrapRaw()
 	assert.NotNil(t, val)
 	assert.Nil(t, err)
 }
@@ -40,7 +40,7 @@ func Test_Failed(t *testing.T) {
 		res.Expect()
 	})
 
-	val, err := res.Unwrap()
+	val, err := res.UnwrapRaw()
 	assert.Nil(t, val)
 	assert.Equal(t, expectedErr, err)
 
@@ -48,13 +48,13 @@ func Test_Failed(t *testing.T) {
 
 func Test_Any_Success(t *testing.T) {
 	anyRes := result.Success(10).ToAny()
-	res := result.Into[int](anyRes)
+	res := result.FromAny[int](anyRes)
 	assert.True(t, res.IsSuccess())
 }
 
 func Test_Any_Failed(t *testing.T) {
 	anyRes := result.Success(10).ToAny()
-	res := result.Into[bool](anyRes)
+	res := result.FromAny[bool](anyRes)
 	assert.True(t, res.HasFailed())
 }
 

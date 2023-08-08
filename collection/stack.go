@@ -2,8 +2,19 @@ package collection
 
 import "github.com/gpabois/gostd/option"
 
+// LIFO
+type IStack[T any] interface {
+	Push(value T)
+	Pop() option.Option[T]
+	Last() option.Option[*T]
+}
+
 type Stack[T any] struct {
 	inner []T
+}
+
+func (stack *Stack[T]) Length() uint {
+	return uint(len(stack.inner))
 }
 
 func (stack *Stack[T]) Push(value T) {

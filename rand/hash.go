@@ -3,12 +3,14 @@ package rand
 import (
 	"crypto/rand"
 	"encoding/hex"
+
+	"github.com/gpabois/gostd/result"
 )
 
-func RandomHex(n int) (string, error) {
+func RandomHex(n int) result.Result[string] {
 	bytes := make([]byte, n)
 	if _, err := rand.Read(bytes); err != nil {
-		return "", err
+		return result.Failed[string](err)
 	}
-	return hex.EncodeToString(bytes), nil
+	return result.Success(hex.EncodeToString(bytes))
 }

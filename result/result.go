@@ -17,7 +17,13 @@ type Result[T any] struct {
 	err   error
 }
 
-func From[T any](val *T, err error) Result[T] {
+// Copy error from one result type to another
+// Panic if the result is not a failure.
+func CopyError[U any, T any](res Result[T]) Result[U] {
+	return Failed[U](res.UnwrapError())
+}
+
+func FromRaw[T any](val *T, err error) Result[T] {
 	if val == nil {
 		return Result[T]{}.Failed(err)
 	} else {
@@ -25,10 +31,11 @@ func From[T any](val *T, err error) Result[T] {
 	}
 }
 
-func (res Result[T]) Unwrap() (*T, error) {
+func (res Result[T]) UnwrapRaw() (*T, error) {
 	return res.UnwrapValue(), res.UnwrapError()
 }
 
+// Unwrap the value, return nil if the result has failed.
 func (res Result[T]) UnwrapValue() *T {
 	if res.HasFailed() {
 		return nil
@@ -51,7 +58,7 @@ func IntoAny[T any](result Result[T]) Result[any] {
 	return Success(val)
 }
 
-func Into[T any](result Result[any]) Result[T] {
+func FromAny[T any](result Result[any]) Result[T] {
 	if result.HasFailed() {
 		return Failed[T](result.err)
 	}
@@ -107,6 +114,7 @@ func (result Result[T]) Chain(mapper func(val T) Result[T]) Result[T] {
 	}
 }
 
+// Flatten a nested result
 func Flatten[T any](value Result[Result[T]]) Result[T] {
 	if value.HasFailed() {
 		return Failed[T](value.UnwrapError())
@@ -123,6 +131,7 @@ func Chain[T any, U any](mapper func(val T) Result[U], val Result[T]) Result[U] 
 	return FlatMap(val, mapper)
 }
 
+// Allow to execute a procedure, while returning the result.
 func (res Result[T]) Then(then func(val T)) Result[T] {
 	if res.IsSuccess() {
 		then(res.Expect())
