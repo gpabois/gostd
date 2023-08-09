@@ -128,6 +128,14 @@ func Map[T any, U any](value Option[T], mapper func(val T) U) Option[U] {
 	}
 }
 
+func Flatten[T any](nested Option[Option[T]]) Option[T] {
+	if nested.IsNone() {
+		return None[T]()
+	}
+
+	return nested.Expect()
+}
+
 func Chain[T any, U any](value Option[T], mapper func(val T) Option[U]) Option[U] {
 	if value.IsNone() {
 		return None[U]()
