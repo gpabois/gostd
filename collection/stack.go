@@ -28,6 +28,7 @@ func (stack *Stack[T]) Last() option.Option[*T] {
 
 	return option.Some(&stack.inner[len(stack.inner)-1])
 }
+
 func (stack *Stack[T]) Pop() option.Option[T] {
 	if len(stack.inner) == 0 {
 		return option.None[T]()

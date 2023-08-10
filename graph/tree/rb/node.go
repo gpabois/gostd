@@ -2,6 +2,7 @@ package rb
 
 import (
 	"github.com/gpabois/gostd/cmp"
+	"github.com/gpabois/gostd/iter"
 	"github.com/gpabois/gostd/option"
 )
 
@@ -27,6 +28,18 @@ type node[T any] struct {
 	parent option.Option[id]
 	left   option.Option[id]
 	right  option.Option[id]
+}
+
+func (n *node[T]) Iter() iter.Iterator[id] {
+	c := []id{}
+	n.left.Then(func(cid id) {
+		c = append(c, cid)
+	})
+	n.right.Then(func(cid id) {
+		c = append(c, cid)
+	})
+
+	return iter.IterSlice(&c)
 }
 
 func (n *node[T]) removeChild(nodeId id) {

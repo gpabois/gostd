@@ -18,6 +18,8 @@ type TreeOptions[T any] struct {
 	nodes option.Option[arena.IArena[id, node[T]]]
 }
 
+
+
 func NewTree[T any](options ...cfg.Configurator[TreeOptions[T]]) Tree[T] {
 	opt := TreeOptions[T]{}
 	cfg.Apply(&opt, options)
@@ -95,6 +97,10 @@ func (tree *Tree[T]) Insert(value T) {
 
 	// Repair the tree afterwards
 	tree.repairAfterInsertion(nodeId)
+}
+
+func (tree *Tree[T]) Remove(value T) {
+	panic("not implemented")
 }
 
 func (tree *Tree[T]) searchLeafId(value T) option.Option[id] {
