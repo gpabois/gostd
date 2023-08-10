@@ -20,6 +20,7 @@ type direction = byte
 type id = uint
 
 type node[T any] struct {
+	id    id
 	color color
 	value T
 

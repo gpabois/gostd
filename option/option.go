@@ -2,6 +2,7 @@ package option
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/gpabois/gostd/result"
@@ -57,6 +58,14 @@ type Option[T any] struct {
 	value T
 }
 
+func (opt Option[T]) String() string {
+	if opt.IsNone() {
+		return "None"
+	} else {
+		return fmt.Sprintf("%s", opt.Expect())
+	}
+}
+
 // Returns nil, or the value if any
 func (opt Option[T]) Get() any {
 	if !opt.isSet {
@@ -64,6 +73,20 @@ func (opt Option[T]) Get() any {
 	}
 
 	return opt.value
+}
+
+func (opt Option[T]) Then(fn func(val T)) Option[T] {
+	if opt.IsSome() {
+		fn(opt.Expect())
+	}
+	return opt
+}
+
+func (opt Option[T]) Else(fn func()) Option[T] {
+	if opt.IsNone() {
+		fn()
+	}
+	return opt
 }
 
 func (opt Option[T]) TypeOf() reflect.Type {

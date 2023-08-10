@@ -79,3 +79,13 @@ func Cmp(left any, right any) result.Result[Order] {
 		return anyCmpOrdered(left, right)
 	}
 }
+
+func Max[T any](left T, right T) result.Result[T] {
+	return result.Map(Cmp(left, right), func(order Order) T {
+		if order == Less {
+			return right
+		} else {
+			return left
+		}
+	})
+}

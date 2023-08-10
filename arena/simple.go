@@ -6,36 +6,46 @@ import (
 	"github.com/gpabois/gostd/option"
 )
 
-type cell[T any] struct {
+type simpleCell[T any] struct {
 	rc    uint
 	value *T
 }
 
-func (cell *cell[T]) acquire() Holder[T] {
+func (cell *simpleCell[T]) acquire() simpleHolder[T] {
 	cell.rc += 1
-	return Holder[T]{
+	return simpleHolder[T]{
 		cell: cell,
 	}
 }
 
-type Holder[T any] struct {
+type simpleHolder[T any] struct {
 	released bool
-	cell     *cell[T]
+	cell     *simpleCell[T]
 }
 
-func (ptr *Holder[T]) Ref() *T {
+func (ptr simpleHolder[T]) Ref() *T {
 	return ptr.cell.value
 }
 
 // Release the pointer
-func (ptr *Holder[T]) Release() {
+func (ptr simpleHolder[T]) Release() {
 	if !ptr.released {
 		ptr.cell.rc -= 1
 	}
 }
 
+func (h simpleHolder[T]) Copy() IHolder[T] {
+	return h.cell.acquire()
+}
+
 type SimpleArena[T any] struct {
-	elements map[uint]cell[T]
+	elements map[uint]simpleCell[T]
+}
+
+func NewSimpleArena[T any]() SimpleArena[T] {
+	return SimpleArena[T]{
+		elements: make(map[uint]simpleCell[T]),
+	}
 }
 
 func (arena *SimpleArena[T]) New() uint {
@@ -43,14 +53,22 @@ func (arena *SimpleArena[T]) New() uint {
 	ptr := &el
 
 	addr := uint(uintptr(unsafe.Pointer(ptr)))
-	arena.elements[addr] = cell[T]{value: ptr}
+	arena.elements[addr] = simpleCell[T]{value: ptr}
 	return addr
 }
 
-func (arena *SimpleArena[T]) At(index uint) option.Option[Holder[T]] {
+func (arena *SimpleArena[T]) At(index uint) option.Option[IHolder[T]] {
 	cell, ok := arena.elements[index]
 	if !ok {
-		return option.None[Holder[T]]()
+		return option.None[IHolder[T]]()
 	}
-	return option.Some(cell.acquire())
+	h := cell.acquire()
+	return option.Some[IHolder[T]](h)
+}
+
+func (arena *SimpleArena[T]) Delete(index uint) {
+	cell, ok := arena.elements[index]
+	if ok && cell.rc == 0 {
+		delete(arena.elements, index)
+	}
 }
