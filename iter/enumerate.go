@@ -1,7 +1,7 @@
 package iter
 
 import (
-	"github.com/gpabois/gostd/collection"
+	collection "github.com/gpabois/gostd/collection/pair"
 	"github.com/gpabois/gostd/option"
 )
 
