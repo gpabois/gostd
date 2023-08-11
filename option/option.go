@@ -167,6 +167,18 @@ func Chain[T any, U any](value Option[T], mapper func(val T) Option[U]) Option[U
 	}
 }
 
+func Expect[T any](opt Option[T]) T {
+	return opt.Expect()
+}
+
+func IsSome[T any](opt Option[T]) bool {
+	return opt.IsSome()
+}
+
+func IsNone[T any](opt Option[T]) bool {
+	return opt.IsNone()
+}
+
 func Some[T any](value T) Option[T] {
 	return Option[T]{isSet: true, value: value}
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func Test_Group(t *testing.T) {
-	it := iter.IterSlice(&[]int{1, 2, 3, 4})
+	it := iter.IterSlice([]int{1, 2, 3, 4})
 	g := iter.Group[[]int](it, func(el int) bool { return el%2 == 0 })
 
 	assert.Equal(t, g[true], []int{2, 4})

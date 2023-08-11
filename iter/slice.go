@@ -11,7 +11,7 @@ func IntoSliceIterable[T any, A ~[]T](slice A) Iterable[T] {
 }
 
 func (iterable SliceIterable[T, A]) Iter() Iterator[T] {
-	return IterSlice(&iterable.inner)
+	return IterSlice(iterable.inner)
 }
 
 func CollectToSlice[S ~[]T, T any](iter Iterator[T]) []T {
@@ -19,11 +19,11 @@ func CollectToSlice[S ~[]T, T any](iter Iterator[T]) []T {
 }
 
 type SliceIterator[T any, A ~[]T] struct {
-	slice  *A
+	slice  A
 	cursor int
 }
 
-func IterSlice[T any, A ~[]T](slice *A) Iterator[T] {
+func IterSlice[T any, A ~[]T](slice A) Iterator[T] {
 	return &SliceIterator[T, A]{
 		slice:  slice,
 		cursor: -1,
@@ -33,10 +33,10 @@ func IterSlice[T any, A ~[]T](slice *A) Iterator[T] {
 func (iter *SliceIterator[T, A]) Next() opt.Option[T] {
 	iter.cursor++
 
-	if iter.cursor >= len(*iter.slice) {
-		iter.cursor = len(*iter.slice)
+	if iter.cursor >= len(iter.slice) {
+		iter.cursor = len(iter.slice)
 		return opt.None[T]()
 	}
 
-	return opt.Some((*iter.slice)[iter.cursor])
+	return opt.Some((iter.slice)[iter.cursor])
 }

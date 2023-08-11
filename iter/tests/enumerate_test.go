@@ -14,7 +14,7 @@ func Test_Enumerate(t *testing.T) {
 		{First: 2, Second: 3},
 	}
 
-	it := iter.IterSlice(&[]int{1, 2, 3})
+	it := iter.IterSlice([]int{1, 2, 3})
 	value := iter.CollectToSlice[[]iter.Enumeration[int]](iter.Enumerate(it))
 
 	assert.Equal(t, expectedValue, value)

@@ -27,7 +27,7 @@ func (it *MapIterator[K, V, M]) Next() option.Option[KV[K, V]] {
 func IterMap[K comparable, V any, M ~map[K]V](m *M) Iterator[KV[K, V]] {
 	keys := reflect.ValueOf(*m).MapKeys()
 	return &MapIterator[K, V, M]{
-		keyIt: Map(IterSlice(&keys), func(value reflect.Value) K { return value.Interface().(K) }),
+		keyIt: Map(IterSlice(keys), func(value reflect.Value) K { return value.Interface().(K) }),
 		inner: m,
 	}
 }

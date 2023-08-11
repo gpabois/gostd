@@ -1,24 +1,21 @@
 package rb
 
 import (
-	"github.com/gpabois/gostd/arena"
 	"github.com/gpabois/gostd/cfg"
 	"github.com/gpabois/gostd/cmp"
+	"github.com/gpabois/gostd/graph/tree/binary"
 	"github.com/gpabois/gostd/option"
 )
 
 // Red-black tree
 // A balanced binary search tree, with insertion, search and remove operations at a ln(N) time.
-type Tree[T any] struct {
-	root  option.Option[id]
-	nodes arena.IArena[id, node[T]]
+type Tree[T any, PT binary.NodePtr[T]] struct {
+	binary.Tree[T, PT]
 }
 
 type TreeOptions[T any] struct {
 	nodes option.Option[arena.IArena[id, node[T]]]
 }
-
-
 
 func NewTree[T any](options ...cfg.Configurator[TreeOptions[T]]) Tree[T] {
 	opt := TreeOptions[T]{}
